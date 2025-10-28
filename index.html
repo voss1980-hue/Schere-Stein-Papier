@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schere, Stein, Papier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Spezifische Schriftart und Hintergrund */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* FINALE KORREKTUR (basierend auf deiner Beschreibung):
+              Verlauf von Himmelblau (oben) zu Hellgrün (unten).
+              (z.B. Tailwind 'cyan-500' zu 'green-400')
+            */
+            background-image: linear-gradient(to bottom, #06b6d4, #4ade80); 
+        }
+        /* Definiere die Farben für das Spiel-Feedback */
+        .result-win {
+            color: #10b981; /* Smaragdgrün */
+        }
+        .result-lose {
+            color: #ef4444; /* Rot */
+        }
+        .result-draw {
+            color: #4b5563; /* Dunkelgrau */
+        }
+    </style>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#1e40af">
+<style>body{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}</style>
+<style>input, textarea, code { user-select: text !important; -webkit-user-select: text !important; -moz-user-select: text !important; -ms-user-select: text !important; }</style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="w-full max-w-md bg-white p-6 md:p-8 rounded-2xl shadow-2xl border border-gray-100">
+
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-6 text-center">Schere, Stein, Papier ✊✋✌️</h1>
+
+        <div id="score-board" class="flex justify-between items-center bg-gray-50 p-4 rounded-xl mb-6 shadow-inner">
+            <div class="text-center">
+                <p class="text-sm font-medium text-gray-600">Spieler</p>
+                <span id="user-score" class="text-4xl font-bold text-blue-600">0</span>
+            </div>
+            <div class="text-center text-2xl font-black text-gray-400 mx-4">vs.</div>
+            <div class="text-center">
+                <p class="text-sm font-medium text-gray-600">Computer</p>
+                <span id="computer-score" class="text-4xl font-bold text-red-600">0</span>
+            </div>
+        </div>
+
+        <div id="result" class="text-xl font-semibold text-center h-12 flex items-center justify-center mb-6 result-draw">
+            Wähle dein Zeichen, um zu beginnen!
+        </div>
+
+        <p id="moves-info" class="text-sm text-center text-gray-500 mb-8">
+            <span id="user-move">Deine Wahl: -</span> | <span id="computer-move">Computer: -</span>
+        </p>
+
+        <div class="flex justify-between gap-3">
+            <button id="rock" class="choice w-1/3 p-4 bg-gray-100 text-gray-800 text-3xl rounded-xl shadow-lg hover:bg-gray-200 transition duration-150 transform hover:scale-105 active:scale-95 border border-gray-300" aria-label="Stein wählen">
+                ✊
+            </button>
+            <button id="paper" class="choice w-1/3 p-4 bg-gray-100 text-gray-800 text-3xl rounded-xl shadow-lg hover:bg-gray-200 transition duration-150 transform hover:scale-105 active:scale-95 border border-gray-300" aria-label="Papier wählen">
+                ✋
+            </button>
+            <button id="scissors" class="choice w-1/3 p-4 bg-gray-100 text-gray-800 text-3xl rounded-xl shadow-lg hover:bg-gray-200 transition duration-150 transform hover:scale-105 active:scale-95 border border-gray-300" aria-label="Schere wählen">
+                ✌️
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // JavaScript Spiellogik
+        let userScore = 0;
+        let computerScore = 0;
+        let lastUserChoice = null; // Variable, um deinen letzten Zug zu speichern
+
+        // DOM-Elemente abrufen
+        const userScoreSpan = document.getElementById('user-score');
+        const computerScoreSpan = document.getElementById('computer-score');
+        const resultDiv = document.getElementById('result');
+        const userMoveSpan = document.getElementById('user-move');
+        const computerMoveSpan = document.getElementById('computer-move');
+        const choices = document.querySelectorAll('.choice');
+
+        // Funktion zur Umwandlung der Schlüssel in deutsche Emojis
+        function toGermanEmoji(choice) {
+            if (choice === 'rock') return 'Stein ✊';
+            if (choice === 'paper') return 'Papier ✋';
+            if (choice === 'scissors') return 'Schere ✌️';
+            return '-';
+        }
+
+        // --- ÜBERARBEITETE COMPUTER-KI ---
+        function getComputerChoice() {
+            const options = ['rock', 'paper', 'scissors'];
+
+            // "Hybride KI": 50% Chance auf "schlaue" Taktik, 50% auf Zufall
+            if (lastUserChoice && Math.random() > 0.5) {
+                
+                // "SCHLAUE" LOGIK: Kontere den LETZTEN Zug des Spielers
+                if (lastUserChoice === 'rock') {
+                    return 'paper'; // Papier schlägt Stein
+                }
+                if (lastUserChoice === 'paper') {
+                    return 'scissors'; // Schere schlägt Papier
+                }
+                if (lastUserChoice === 'scissors') {
+                    return 'rock'; // Stein schlägt Schere
+                }
+            } 
+            
+            // "ZUFÄLLIGE" LOGIK (Fallback oder wenn die 50% eintreten)
+            const randomIndex = Math.floor(Math.random() * options.length);
+            return options[randomIndex];
+        }
+
+        // Funktion zur Bestimmung des Gewinners
+        function determineWinner(user, computer) {
+            if (user === computer) {
+                return 'draw';
+            }
+            if (
+                (user === 'rock' && computer === 'scissors') ||
+                (user === 'paper' && computer === 'rock') ||
+                (user === 'scissors' && computer === 'paper')
+            ) {
+                return 'win';
+            } else {
+                return 'lose';
+            }
+        }
+
+        // Funktion zur Anzeige des Ergebnisses und Aktualisierung der Punktzahl
+        function updateGame(userChoice, computerChoice, result) {
+            // 1. Züge anzeigen
+            userMoveSpan.textContent = `Deine Wahl: ${toGermanEmoji(userChoice)}`;
+            computerMoveSpan.textContent = `Computer: ${toGermanEmoji(computerChoice)}`;
+
+            // 2. Ergebnis-Meldung und Klasse aktualisieren
+            resultDiv.classList.remove('result-win', 'result-lose', 'result-draw');
+            
+            let message = '';
+            if (result === 'win') {
+                userScore++;
+                message = 'DU GEWINNST! 🎉';
+                resultDiv.classList.add('result-win');
+            } else if (result === 'lose') {
+                computerScore++;
+                message = 'Du verlierst. 😔';
+                resultDiv.classList.add('result-lose');
+            } else {
+                message = 'UNENTSCHIEDEN. 🤝';
+                resultDiv.classList.add('result-draw');
+            }
+
+            resultDiv.textContent = message;
+
+            // 3. Punktestand aktualisieren
+            userScoreSpan.textContent = userScore;
+            computerScoreSpan.textContent = computerScore;
+        }
+
+        // Haupt-Spielfunktion
+        function game(userChoice) {
+            const computerChoice = getComputerChoice(); // Ruft die NEUE KI auf
+            const result = determineWinner(userChoice, computerChoice);
+            updateGame(userChoice, computerChoice, result);
+
+            // Den aktuellen Zug für die nächste Runde speichern
+            lastUserChoice = userChoice; 
+        }
+
+        // Event-Listener für alle Auswahl-Buttons
+        choices.forEach(button => {
+            button.addEventListener('click', (e) => {
+                // Führe das Spiel mit der ID des geklickten Buttons aus ('rock', 'paper', 'scissors')
+                game(e.currentTarget.id);
+            });
+        });
+
+    </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      // KORREKTUR 2: Scope auf Repository-Pfad setzen
+      const repoPath = '/Schere-Stein-Papier/';
+      navigator.serviceWorker.register('./sw.js', { scope: repoPath })
+        .then((reg) => console.log('Service Worker registered:', reg.scope))
+        .catch(err => console.error('SW registration failed:', err));
+    }
+  </script>
+<footer style="text-align:center;padding:1.5rem;background-color:#1f2937;color:#d1d5db;font-size:0.75rem;"><p>Schere-Stein-Papier</p><p>Entwickler: Björn Voss aka Omega</p><p><a href="mailto:voss.1980@gmail.com" style="color:#3b82f6;text-decoration:none;">voss.1980@gmail.com</a></p></footer>
+
+<button id="installFab" title="App installieren" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; background-color: #1e40af; color: white; border: none; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 1000; justify-content: center; align-items: center;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+</button>
+
+<script>
+  let deferredPrompt;
+  const installButton = document.getElementById('installFab');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installButton) {
+      installButton.style.display = 'flex';
+    }
+  });
+
+  if (installButton) {
+    installButton.addEventListener('click', async () => {
+      installButton.style.display = 'none';
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('User choice:', outcome);
+        deferredPrompt = null;
+      }
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+     if (installButton) {
+        installButton.style.display = 'none';
+     }
+    deferredPrompt = null;
+    console.log('PWA wurde installiert');
+  });
+</script>
+</body>
+</html>
